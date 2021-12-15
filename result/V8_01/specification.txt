@@ -1,5 +1,0 @@
-in this model we have used osnet_x1_0 pretrained on market1501 
-
-the baseline map is 82.6 and their feature extractor has 751 node
-
-

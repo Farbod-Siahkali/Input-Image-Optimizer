@@ -24,7 +24,7 @@ attr_net_camarket = CA_market_model2(model=model,
                 need_attr = True,
                 need_collection = False)
 
-model_path = './result/V8_01/best_attr_net.pth'
+model_path = './result/best_attr_net.pth'
 trained_net = torch.load(model_path)
 attr_net_camarket.load_state_dict(trained_net.state_dict())
 

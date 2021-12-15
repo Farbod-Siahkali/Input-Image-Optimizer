@@ -24,34 +24,16 @@ class RegularizedClassSpecificImageGeneration():
         #self.created_image = cv2.resize(self.created_image, (256, 512))
         #self.created_image = np.transpose(self.created_image, (1, 0, 2))
         #cv2.imshow('image', self.created_image)
-        # Create the folder to export images if not exists
+        
         if not os.path.exists(f'./generated/class_{self.target_class}'):
             os.makedirs(f'./generated/class_{self.target_class}')
 
     def generate(self, iterations=1000, blur_freq=4, blur_rad=1, wd=0.0001, clipping_value=0.1):
-        """Generates class specific image with enhancements to improve image quality. 
-        See https://arxiv.org/abs/1506.06579 for details on each argument's effect on output quality. 
-        
-
-        Play around with combinations of arguments. Besides the defaults, this combination has produced good images:
-        blur_freq=6, blur_rad=0.8, wd = 0.05
-
-        Keyword Arguments:
-            iterations {int} -- Total iterations for gradient ascent (default: {150})
-            blur_freq {int} -- Frequency of Gaussian blur effect, in iterations (default: {6})
-            blur_rad {float} -- Radius for gaussian blur, passed to PIL.ImageFilter.GaussianBlur() (default: {0.8})
-            wd {float} -- Weight decay value for Stochastic Gradient Ascent (default: {0.05})
-            clipping_value {None or float} -- Value for gradient clipping (default: {0.1})
-        
-        Returns:
-            np.ndarray -- Final maximally activated class image
-        """
+       
         initial_learning_rate = 20
         for i in range(1, iterations):
             # Process image and return variable
 
-            #implement gaussian blurring every ith iteration
-            #to improve output
             if i % blur_freq == 0:
                 self.processed_image = preprocess_and_blur_image(
                     self.created_image, False, blur_rad)
@@ -69,7 +51,7 @@ class RegularizedClassSpecificImageGeneration():
             # Forward
             output = self.model(self.processed_image)
             # Target specific class
-            class_loss = -sum(output[0, self.target_class])
+            class_loss = -output[0, self.target_class]
 
             if i in np.linspace(0, iterations, 10, dtype=int):
                 print('Iteration:', str(i), 'Loss',
@@ -96,7 +78,7 @@ class RegularizedClassSpecificImageGeneration():
         im_path = f'./generated/class_{self.target_class}/c_{self.target_class}_iter_{i}_loss_{class_loss.data.cpu().numpy()}.jpg'
         save_image(self.created_image, im_path)
 
-        #write file with regularization details
+        
         with open(f'./generated/class_{self.target_class}/run_details.txt', 'w') as f:
             f.write(f'Iterations: {iterations}\n')
             f.write(f'Blur freq: {blur_freq}\n')
@@ -104,28 +86,17 @@ class RegularizedClassSpecificImageGeneration():
             f.write(f'Weight decay: {wd}\n')
             f.write(f'Clip value: {clipping_value}\n')
 
-        #rename folder path with regularization details for easy access
+       
         os.rename(f'./generated/class_{self.target_class}',
                   f'./generated/class_{self.target_class}_blurfreq_{blur_freq}_blurrad_{blur_rad}_wd{wd}')
         return self.processed_image
 
 
 def preprocess_and_blur_image(pil_im, resize_im=True, blur_rad=None):
-    """
-        Processes image with optional Gaussian blur for CNNs
-
-    Args:
-        PIL_img (PIL_img): PIL Image or numpy array to process
-        resize_im (bool): Resize to 224 or not
-        blur_rad (int): Pixel radius for Gaussian blurring (default = None)
-    returns:
-        im_as_var (torch variable): Variable that contains processed float tensor
-    """
-    # mean and std list for channels (Imagenet)
+    
     mean = [0.485, 0.456, 0.406]
     std = [0.229, 0.224, 0.225]
 
-    #ensure or transform incoming image to PIL image
     if type(pil_im) != Image.Image:
         try:
             pil_im = Image.fromarray(pil_im)
@@ -148,11 +119,11 @@ def preprocess_and_blur_image(pil_im, resize_im=True, blur_rad=None):
         im_as_arr[channel] /= 255
         im_as_arr[channel] -= mean[channel]
         im_as_arr[channel] /= std[channel]
-    # Convert to float tensor
+    
     im_as_ten = torch.from_numpy(im_as_arr).float()
-    # Add one more channel to the beginning. Tensor shape = 1,3,224,224
+
     im_as_ten.unsqueeze_(0)
-    # Convert to Pytorch variable
+    
     if use_cuda:
         im_as_var = Variable(im_as_ten.cuda(), requires_grad=True)
     else:
