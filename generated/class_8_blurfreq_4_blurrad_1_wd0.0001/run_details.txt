@@ -1,0 +1,5 @@
+Iterations: 1000
+Blur freq: 4
+Blur radius: 1
+Weight decay: 0.0001
+Clip value: 0.1

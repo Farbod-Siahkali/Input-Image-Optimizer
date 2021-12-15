@@ -30,7 +30,7 @@ class RegularizedClassSpecificImageGeneration():
         self.target_class = target_class
         # Generate a random image
         
-        self.created_image = np.uint8(np.random.uniform(0, 255, (512, 256, 3)))
+        self.created_image = np.uint8(np.random.uniform(0, 255, (512, 512, 3)))
         #import cv2
         #self.created_image = cv2.imread('../input_images/aaa.jpg')
         #self.created_image = cv2.resize(self.created_image, (256, 512))
@@ -81,7 +81,7 @@ class RegularizedClassSpecificImageGeneration():
             # Forward
             output = self.model(self.processed_image)
             # Target specific class
-            class_loss = -output['id'][0, 3]
+            class_loss = -sum(output[0, 180:200])
 
             if i in np.linspace(0, iterations, 10, dtype=int):
                 print('Iteration:', str(i), 'Loss',
@@ -172,7 +172,7 @@ def preprocess_and_blur_image(pil_im, resize_im=True, blur_rad=None):
     return im_as_var
 
 if __name__ == '__main__':
-    target_class = 1  # YOUR TARGET
+    target_class = 150  # YOUR TARGET
     pretrained_model = models.alexnet(pretrained=True)
 
     from torchreid import models  
@@ -193,13 +193,11 @@ if __name__ == '__main__':
                     need_attr = True,
                     need_collection = False)
 
-
-
     model_path = './result/V8_01/best_attr_net.pth'
     trained_net = torch.load(model_path)
     attr_net_camarket.load_state_dict(trained_net.state_dict())
 
     attr_net_camarket = attr_net_camarket.to('cuda')
 
-    csig = RegularizedClassSpecificImageGeneration(attr_net_camarket, target_class)
+    csig = RegularizedClassSpecificImageGeneration(pretrained_model, target_class)
     csig.generate()
