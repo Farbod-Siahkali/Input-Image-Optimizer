@@ -4,8 +4,7 @@ This is a library to optimize input image for any deep learning network based on
 
 Requirements
 ---------------
-.. code-block:: python
-    
+```python
     torch
     torchvision
     copy
