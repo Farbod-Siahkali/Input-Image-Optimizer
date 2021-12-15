@@ -1,26 +1,14 @@
-"""
-Created on Tues Mar 10 08:13:15 2020
-@author: Alex Stoken - https://github.com/alexstoken
-
-Last tested with torchvision 0.5.0 with image and model on cpu
-"""
 import os
 import numpy as np
 from PIL import Image, ImageFilter
-
 import torch
 from torch.optim import SGD
 from torch.autograd import Variable
-from torchvision import models
-
-from misc_functions import recreate_image, save_image
+from functions import recreate_image, save_image
 
 use_cuda = torch.cuda.is_available()
 
 class RegularizedClassSpecificImageGeneration():
-    """
-        Produces an image that maximizes a certain class with gradient ascent. Uses Gaussian blur, weight decay, and clipping. 
-    """
 
     def __init__(self, model, target_class):
         self.mean = [-0.485, -0.456, -0.406]
@@ -81,7 +69,7 @@ class RegularizedClassSpecificImageGeneration():
             # Forward
             output = self.model(self.processed_image)
             # Target specific class
-            class_loss = -sum(output[0, 180:200])
+            class_loss = -sum(output[0, self.target_class])
 
             if i in np.linspace(0, iterations, 10, dtype=int):
                 print('Iteration:', str(i), 'Loss',
@@ -170,34 +158,4 @@ def preprocess_and_blur_image(pil_im, resize_im=True, blur_rad=None):
     else:
         im_as_var = Variable(im_as_ten, requires_grad=True)
     return im_as_var
-
-if __name__ == '__main__':
-    target_class = 150  # YOUR TARGET
-    pretrained_model = models.alexnet(pretrained=True)
-
-    from torchreid import models  
-    from models import CA_market_model2
-
-    model = models.build_model(
-        name='osnet_x1_0',
-        num_classes=751,
-        loss='softmax',
-        pretrained=False
-    )
-
-    attr_net_camarket = CA_market_model2(model=model,
-                    feature_dim = 512,
-                    num_id = 751,
-                    attr_dim = 46,
-                    need_id = False,
-                    need_attr = True,
-                    need_collection = False)
-
-    model_path = './result/V8_01/best_attr_net.pth'
-    trained_net = torch.load(model_path)
-    attr_net_camarket.load_state_dict(trained_net.state_dict())
-
-    attr_net_camarket = attr_net_camarket.to('cuda')
-
-    csig = RegularizedClassSpecificImageGeneration(pretrained_model, target_class)
-    csig.generate()
+    
